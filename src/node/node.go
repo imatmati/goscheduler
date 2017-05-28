@@ -1,4 +1,4 @@
-package heap
+package node
 
 // Comparer is the interface of comparison used by Nodes.
 type Comparer interface {
@@ -14,7 +14,11 @@ type Loader interface {
 }
 
 // Node is the interface of elements in the Heap.
-type Node interface {
+type Node struct {
 	Comparer
 	Loader
+}
+
+func New() Node{
+	return Node{}
 }
