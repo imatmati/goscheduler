@@ -5,12 +5,10 @@ import (
 	"node"
 )
 
-type _node node.Node
-
 //NodeString is a specialisation of Node for a string load.
 type NodeString struct {
 	Load string
-	_node
+	node.Impl
 }
 
 func (t NodeString) String() string {
@@ -18,7 +16,7 @@ func (t NodeString) String() string {
 }
 
 //New creates a new Node for string load.
-func New(load string, priority uint) *NodeString {
-	return &NodeString{Load: load, _node: _node{Priority: priority}}
+func New(load string, priority uint) NodeString {
+	return NodeString{Load: load, Impl: node.Impl{Priority: priority}}
 
 }

@@ -71,42 +71,12 @@ func TestRemainderLessThanColumnLength(t *testing.T) {
 func TestSetNode0(t *testing.T) {
 	tree := NewDefaultTree()
 	nodetoinsert := node.New("whatever", 0)
-	err := tree.setNode(nodetoinsert, 0)
+	err := tree.setNode(&nodetoinsert, 0)
 	if err != nil {
 		log.Print(err.Error())
 	}
-	if tree.store[0][0] != nodetoinsert {
+	if tree.store[0][0] != &nodetoinsert {
 		log.Printf("expected address %p, actual address %p", &nodetoinsert, tree.store[0][0])
-		t.FailNow()
-	}
-
-}
-
-func TestComparisonGreaterPriority(t *testing.T) {
-
-	n := node.New("ok", 1)
-	n2 := node.New("ko", 0)
-	if !n.Greater(n2) {
-		t.FailNow()
-	}
-
-}
-
-func TestComparisonLessPriority(t *testing.T) {
-
-	n := node.New("ok", 1)
-	n2 := node.New("ko", 0)
-	if !n2.Less(n) {
-		t.FailNow()
-	}
-
-}
-
-func TestComparisonEqualsPriority(t *testing.T) {
-
-	n := node.New("ok", 0)
-	n2 := node.New("ko", 0)
-	if !n.Equals(n2) {
 		t.FailNow()
 	}
 
