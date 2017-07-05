@@ -1,8 +1,13 @@
 package node
 
 import (
+	"fmt"
 	"testing"
 )
+
+func f(v struct{ a int }) {
+	fmt.Println(v.a)
+}
 
 func TestComparisonGreaterPriority(t *testing.T) {
 

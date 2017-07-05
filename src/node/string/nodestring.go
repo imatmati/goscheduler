@@ -7,8 +7,9 @@ import (
 
 //NodeString is a specialisation of Node for a string load.
 type NodeString struct {
-	Load string
-	node.Impl
+	node.Comparer
+	Priority uint
+	Load     string
 }
 
 func (t NodeString) String() string {
@@ -17,6 +18,6 @@ func (t NodeString) String() string {
 
 //New creates a new Node for string load.
 func New(load string, priority uint) NodeString {
-	return NodeString{Load: load, Impl: node.Impl{Priority: priority}}
+	return NodeString{Load: load, Priority: priority}
 
 }

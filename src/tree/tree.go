@@ -6,13 +6,13 @@ import (
 )
 
 const (
-	columnLength int = 100
-	rowLength    int = 10000
+	rowLength    int = 100
+	columnLength int = 10000
 )
 
 //NewDefaultTree creates a defaulted heap container.
 func NewDefaultTree() *tree {
-	store := make([][]*node.Node, 0, columnLength)
+	store := make([][]*node.Node, 0, rowLength)
 	return &tree{store, 0}
 }
 
@@ -27,11 +27,12 @@ var DefaultTree *tree = NewDefaultTree()
 
 type tree struct {
 	store [][]*node.Node
-	top   int
+	//top points to the next available bucket in 2d heap array.
+	top int
 }
 
 func (t *tree) push(node *node.Node) error {
-
+	// When I push, I try to insert at top position.
 	if err := t.setNode(node, t.top); err != nil {
 		return err
 	}
@@ -42,13 +43,42 @@ func (t *tree) push(node *node.Node) error {
 	return nil
 }
 
-func (t *tree) up(nodefrom int) error {
+func (t *tree) up(idnode int) error {
+	l := t.length()
 
+	if idnode >= l {
+		return fmt.Errorf("Out of bound: %d requested, but length of %d", idnode, l)
+	}
+	nodeToUp := t.getNode(idnode)
+
+	for {
+
+		isRight := idnode%2 == 0
+		idparent := -1
+		if isRight {
+			idparent = (idnode / 2) - 1
+		} else {
+			idparent = (idnode - 1) / 2
+		}
+		if idparent < 0 {
+			break
+		}
+		nodeParent := t.getNode(idparent)
+		if nodeParent.Priority > nodeToUp.Priority {
+
+			t.setNode(nodeToUp, idparent)
+			t.setNode(nodeParent, idnode)
+			idnode = idparent
+
+		} else {
+			break
+		}
+	}
 	return nil
 }
 
 func (t tree) length() int {
-	return len(t.store)
+	return len(t.store) * columnLength
 }
 
 func (t tree) capacity() int {
@@ -64,30 +94,35 @@ func (t tree) capacity() int {
 }
 
 func (t *tree) setNode(node *node.Node, pos int) error {
-	col, row := getColumnRow(pos)
-	colindex, _ := getColumnRow(t.top)
-	// Beyond top and last line
-	if col > colindex {
+	// Row and column position in store 2d array of heap.
+	row, col := getColumnRow(pos)
+	//fmt.Printf("pos %d, col %d, row %d, top %d\n", pos, col, row, t.top)
+	// Get the row and column of the nex available bucket in 2d heap array.
+	rowtop, coltop := getColumnRow(t.top)
+	// Inserting beyond top is forbidden. Can't store beyond next available bucket.
+	// And when push is done, I simply set the node at top position.
+	if row == rowtop && col > coltop || row > rowtop {
 		return fmt.Errorf("Out of range insertion: asked %d but length is %d", pos, t.top)
 	}
 	// Row may be already allocated or not
-	if col == colindex && row == 0 {
+	// As a row is fully reserved, there's room for top position as long as
+	// it doesn't start a new line.
+	if coltop == 0 {
 		t.allocateNewRow()
 	}
-
-	t.store[col][row] = node
+	t.store[row][col] = node
 	return nil
 }
 
-func getColumnRow(pos int) (col, row int) {
-	col = int(pos / columnLength)
-	row = pos - col*columnLength
+func getColumnRow(pos int) (row, col int) {
+	col = pos % columnLength
+	row = int(pos / columnLength)
 	return
 }
 
 func (t tree) getNode(pos int) *node.Node {
-	col, row := getColumnRow(pos)
-	return t.store[col][row]
+	row, col := getColumnRow(pos)
+	return t.store[row][col]
 }
 
 func (t *tree) allocateNewRow() error {
@@ -97,6 +132,6 @@ func (t *tree) allocateNewRow() error {
 	if length == capacity {
 		return fmt.Errorf("Max capacity %d reached", capacity)
 	}
-	t.store = append(t.store, make([]*node.Node, rowLength))
+	t.store = append(t.store, make([]*node.Node, columnLength))
 	return nil
 }
