@@ -60,11 +60,11 @@ func (n Node) String() string {
 }
 
 //NewEmptyNode creates an empty Node.
-func NewEmptyNode() Node {
-	return Node{}
+func NewEmptyNode() *Node {
+	return &Node{}
 }
 
 //New creates a Node with load and priority.
-func New(load interface{}, priority uint) Node {
-	return Node{Load: load, Priority: priority}
+func New(load interface{}, priority uint) *Node {
+	return &Node{Load: load, Priority: priority}
 }
