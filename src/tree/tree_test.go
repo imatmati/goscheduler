@@ -87,8 +87,8 @@ func TestUpWithoutChange(t *testing.T) {
 	tree := NewDefaultTree()
 	parent := node.New("parent", 0)
 	child := node.New("child", 1)
-	tree.push(parent)
-	tree.push(child)
+	tree.Push(parent)
+	tree.Push(child)
 	tree.up(1)
 	if allegedParent, err := tree.getNode(0); allegedParent != parent || err != nil {
 		t.Errorf("Parent %v is uncorrect, %v expected", allegedParent, parent)
@@ -102,11 +102,11 @@ func TestUpWitTwoNodes(t *testing.T) {
 	tree := NewDefaultTree()
 	parent := node.New("parent", 2)
 	child := node.New("child", 1)
-	if err := tree.push(parent); err != nil {
+	if err := tree.Push(parent); err != nil {
 		fmt.Println(err.Error())
 		t.FailNow()
 	}
-	if err := tree.push(child); err != nil {
+	if err := tree.Push(child); err != nil {
 		fmt.Println(err.Error())
 		t.FailNow()
 	}
@@ -127,9 +127,9 @@ func TestUpWitThreeNodes(t *testing.T) {
 	parent := node.New("parent", 4)
 	child := node.New("child", 1)
 	sibling := node.New("sibling", 5)
-	tree.push(parent)
-	tree.push(sibling)
-	tree.push(child)
+	tree.Push(parent)
+	tree.Push(sibling)
+	tree.Push(child)
 	tree.up(2)
 	if allegedParent, err := tree.getNode(0); allegedParent != child || err != nil {
 		t.Errorf("Parent %v is uncorrect, %v expected", allegedParent, parent)
@@ -146,13 +146,13 @@ func TestUpWitThreeNodes(t *testing.T) {
 func TestDownWithOneNodesWithPop(t *testing.T) {
 	tree := NewDefaultTree()
 	parent := node.New("parent", 1)
-	tree.push(parent)
+	tree.Push(parent)
 	var (
 		popednode *node.Node
 		err       error
 	)
 
-	if popednode, err = tree.pop(); err != nil {
+	if popednode, err = tree.Pop(); err != nil {
 		t.Error(err.Error())
 	}
 	if popednode != parent {
@@ -167,8 +167,8 @@ func TestDownWithTwoNodesWithDown(t *testing.T) {
 	tree := NewDefaultTree()
 	parent := node.New("parent", 1)
 	child := node.New("child", 4)
-	tree.push(parent)
-	tree.push(child)
+	tree.Push(parent)
+	tree.Push(child)
 	if err := tree.down(); err != nil {
 		t.Error(err.Error())
 	}
@@ -181,14 +181,14 @@ func TestDownWithTwoNodesWithPop(t *testing.T) {
 	tree := NewDefaultTree()
 	parent := node.New("parent", 1)
 	child := node.New("child", 4)
-	tree.push(parent)
-	tree.push(child)
+	tree.Push(parent)
+	tree.Push(child)
 	var (
 		popednode *node.Node
 		err       error
 	)
 
-	if popednode, err = tree.pop(); err != nil {
+	if popednode, err = tree.Pop(); err != nil {
 		t.Error(err.Error())
 	}
 	if popednode != parent {
@@ -204,15 +204,15 @@ func TestDownWithThreeNodesWithPopAndInversion(t *testing.T) {
 	parent := node.New("parent", 1)
 	child := node.New("child", 4)
 	child2 := node.New("child2", 6)
-	tree.push(parent)
-	tree.push(child)
-	tree.push(child2)
+	tree.Push(parent)
+	tree.Push(child)
+	tree.Push(child2)
 	var (
 		popednode *node.Node
 		err       error
 	)
 
-	if popednode, err = tree.pop(); err != nil {
+	if popednode, err = tree.Pop(); err != nil {
 		t.Error(err.Error())
 	}
 	if popednode != parent {
@@ -228,15 +228,15 @@ func TestDownWithThreeNodesWithPopWithoutInversion(t *testing.T) {
 	parent := node.New("parent", 1)
 	child := node.New("child", 6)
 	child2 := node.New("child2", 4)
-	tree.push(parent)
-	tree.push(child)
-	tree.push(child2)
+	tree.Push(parent)
+	tree.Push(child)
+	tree.Push(child2)
 	var (
 		popednode *node.Node
 		err       error
 	)
 
-	if popednode, err = tree.pop(); err != nil {
+	if popednode, err = tree.Pop(); err != nil {
 		t.Error(err.Error())
 	}
 	if popednode != parent {
@@ -253,16 +253,16 @@ func TestDownWithFourNodesWithPop(t *testing.T) {
 	child := node.New("child", 6)
 	child2 := node.New("child2", 4)
 	child3 := node.New("child3", 8)
-	tree.push(parent)
-	tree.push(child)
-	tree.push(child2)
-	tree.push(child3)
+	tree.Push(parent)
+	tree.Push(child)
+	tree.Push(child2)
+	tree.Push(child3)
 	var (
 		popednode *node.Node
 		err       error
 	)
 
-	if popednode, err = tree.pop(); err != nil {
+	if popednode, err = tree.Pop(); err != nil {
 		t.Error(err.Error())
 	}
 	if popednode != parent {

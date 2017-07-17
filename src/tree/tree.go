@@ -12,28 +12,28 @@ const (
 )
 
 //NewDefaultTree creates a defaulted heap container.
-func NewDefaultTree() *tree {
+func NewDefaultTree() *Tree {
 	store := make([][]*node.Node, 0, rowLength)
-	return &tree{store, 0}
+	return &Tree{store, 0}
 }
 
 //NewTree creates a heap container of length specified.
-func NewTree(length int) *tree {
+func NewTree(length int) *Tree {
 	store := make([][]*node.Node, 0, length)
-	return &tree{store, 0}
+	return &Tree{store, 0}
 }
 
 //DefaultTree is a provided default tree with default length.
-var DefaultTree *tree = NewDefaultTree()
+var DefaultTree *Tree = NewDefaultTree()
 
-type tree struct {
+type Tree struct {
 	store [][]*node.Node
 	//top points to the next available bucket in 2d heap array.
 	top int
 }
 
 // Push insert the node at the next available room in the 2d heap array.
-func (t *tree) push(node *node.Node) error {
+func (t *Tree) Push(node *node.Node) error {
 	// When I push, I try to insert at top position.
 	if err := t.setNode(node, t.top); err != nil {
 		return err
@@ -45,7 +45,7 @@ func (t *tree) push(node *node.Node) error {
 	return nil
 }
 
-func (t *tree) pop() (*node.Node, error) {
+func (t *Tree) Pop() (*node.Node, error) {
 	if t.length() == 0 {
 		return nil, errors.New("tree is empty")
 	}
@@ -65,7 +65,7 @@ func (t *tree) pop() (*node.Node, error) {
 	return topNode, nil
 }
 
-func (t *tree) down() error {
+func (t *Tree) down() error {
 	if t.length() <= 1 {
 		return nil
 	}
@@ -110,7 +110,7 @@ func nodeMinPriority(leftnode *node.Node, leftID int, rightnode *node.Node, righ
 }
 
 // Up maintains the condition of a heap that is to say it makes any transformations needed to maintain the lowest priority node at top.
-func (t *tree) up(pos int) error {
+func (t *Tree) up(pos int) error {
 	if err := t.preconditionGet(pos); err != nil {
 		return err
 	}
@@ -151,11 +151,11 @@ func (t *tree) up(pos int) error {
 
 // Length returns the lenght of reserved space for the 2d heap array.
 // By nature, it's a multiple of columLength.
-func (t tree) length() int {
+func (t Tree) length() int {
 	return len(t.store) * columnLength
 }
 
-func (t tree) capacity() int {
+func (t Tree) capacity() int {
 	var capacity int
 	for i := range t.store {
 		capacityColumn := cap(t.store[i])
@@ -170,7 +170,7 @@ func (t tree) capacity() int {
 // SetNode tries to insert the provided node at the zero indexed position in
 // the 2d heap array. It can insert in any position below and equal to top index
 // and takes charge of allocating new row if needed if top has gone beyond the current row of data.
-func (t *tree) setNode(node *node.Node, pos int) error {
+func (t *Tree) setNode(node *node.Node, pos int) error {
 	// Row and column position in store 2d array of heap.
 	row, col := getColumnRow(pos)
 	//fmt.Printf("pos %d, col %d, row %d, top %d\n", pos, col, row, t.top)
@@ -197,7 +197,7 @@ func getColumnRow(pos int) (row, col int) {
 	return
 }
 
-func (t tree) preconditionGet(pos int) error {
+func (t Tree) preconditionGet(pos int) error {
 	if pos < 0 {
 		return fmt.Errorf("index %d of node is negative", pos)
 	}
@@ -207,7 +207,7 @@ func (t tree) preconditionGet(pos int) error {
 	return nil
 }
 
-func (t tree) getNode(pos int) (*node.Node, error) {
+func (t Tree) getNode(pos int) (*node.Node, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (t tree) getNode(pos int) (*node.Node, error) {
 	return t.store[row][col], nil
 }
 
-func (t *tree) allocateNewRow() error {
+func (t *Tree) allocateNewRow() error {
 
 	length := len(t.store)
 	capacity := cap(t.store)
@@ -226,7 +226,7 @@ func (t *tree) allocateNewRow() error {
 	return nil
 }
 
-func (t tree) getLeft(pos int) (*node.Node, int, error) {
+func (t Tree) getLeft(pos int) (*node.Node, int, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, -1, err
 	}
@@ -238,7 +238,7 @@ func (t tree) getLeft(pos int) (*node.Node, int, error) {
 	return node, leftID, err
 }
 
-func (t tree) getRight(pos int) (*node.Node, int, error) {
+func (t Tree) getRight(pos int) (*node.Node, int, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, -1, err
 	}

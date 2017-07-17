@@ -2,32 +2,29 @@ package heap
 
 import (
 	"node"
-	"sync"
+	t "tree"
 )
 
-type HeapManagerItf interface {
-	Pop() (node.Node, error)
-	Push(node node.Node) error
-	GetLength() uint32
+//HeapManager manage the push and pop of nodes into the heap.
+type Manager interface {
+	Pop() (*node.Node, error)
+	Push(node *node.Node) error
 }
 
-type HeapManager struct {
-	HeapManagerItf
-	mut sync.Mutex
+type heapManagerImpl struct {
+	Manager
+	tree *t.Tree
 }
 
-func (hm HeapManager) Pop() node.Node {
-	return hm.getNode(hm.GetLength())
+func (hm heapManagerImpl) Pop() (*node.Node, error) {
+	return hm.tree.Pop()
 }
 
-func (hm *HeapManager) Push(node node.Node) error {
-	// la concurrence est à traiter plus tard.
-	hm.mut.Lock()
-	defer hm.mut.Unlock()
-	return hm.setNode(node, GetLength())
-
+func (hm heapManagerImpl) Push(node *node.Node) error {
+	return hm.tree.Push(node)
 }
 
-func (hm *HeapManager) setNode(node node.Node, pos uint32) error {
-
+//New creates a new head manager
+func New() Manager {
+	return heapManagerImpl{tree: t.DefaultTree}
 }

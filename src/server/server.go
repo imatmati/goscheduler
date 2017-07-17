@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"heap"
 	"net/http"
 	"node"
 	"time"
@@ -24,15 +25,23 @@ type Options struct {
 //Run launches the server with passed options.
 func Run(options Options) {
 
+	manager := heap.New()
+
 	router := mux.NewRouter()
+	// Example of call : curl -X POST -d '{"Priority":1,"Load":{"TTL":1203,"user":"kfk56kgl3S"}}' http://127.0.0.1:8080/jobs
 	router.HandleFunc("/jobs", func(rw http.ResponseWriter, request *http.Request) {
 		var node node.Node
 		decoder := json.NewDecoder(request.Body)
 		if err := decoder.Decode(&node); err != nil {
-			fmt.Println(err.Error())
+			rw.WriteHeader(http.StatusInternalServerError)
 		}
-		fmt.Println(node)
-	})
+		if err := manager.Push(&node); err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			//TODO add a message
+			return
+		}
+		rw.WriteHeader(http.StatusCreated)
+	}).Methods("POST")
 
 	srv := http.Server{Handler: router}
 
