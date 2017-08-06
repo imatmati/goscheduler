@@ -1,40 +1,48 @@
 package node
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
-func f(v struct{ a int }) {
-	fmt.Println(v.a)
-}
+func TestEmptyNodePriority(t *testing.T) {
 
-func TestComparisonGreaterPriority(t *testing.T) {
-
-	n := New("ok", 1)
-	n2 := New("ko", 0)
-	if !n.Greater(n2) {
-		t.FailNow()
+	node := NewEmptyNode()
+	if node.Priority != 0 {
+		t.Errorf("Empty node priority should be 0 but is %d", node.Priority)
 	}
 
 }
 
-func TestComparisonLessPriority(t *testing.T) {
+func TestEmptyNodeLoad(t *testing.T) {
 
-	n := New("ok", 1)
-	n2 := New("ko", 0)
-	if !n2.Less(n) {
-		t.FailNow()
+	node := NewEmptyNode()
+	if node.Load != nil {
+		t.Errorf("Empty node shouldn't have any load but is %v", node.Load)
 	}
-
 }
 
-func TestComparisonEqualsPriority(t *testing.T) {
-
-	n := New("ok", 0)
-	n2 := New("ko", 0)
-	if !n.Equals(n2) {
-		t.FailNow()
+func TestNodeCreation(t *testing.T) {
+	load := "this is the load"
+	priority := uint(10)
+	node := New(load, priority)
+	if node.Priority != 10 {
+		t.Errorf("Node should have a priority of %d but is %d", priority, node.Priority)
 	}
+	if node.Load != load {
+		t.Errorf("Node should have load %v but is %v", load, node.Load)
+	}
+}
 
+func TestNodePriority(t *testing.T) {
+	priority := uint(10)
+	node := New(nil, priority)
+	if node.Priority != 10 {
+		t.Errorf("Node should have a priority of %d but is %d", priority, node.Priority)
+	}
+}
+
+func TestNodeLoad(t *testing.T) {
+	load := "this is the load"
+	node := New(load, 0)
+	if node.Load != load {
+		t.Errorf("Node should have load %v but is %v", load, node.Load)
+	}
 }

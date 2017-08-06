@@ -26,6 +26,7 @@ func NewTree(length int) *Tree {
 //DefaultTree is a provided default tree with default length.
 var DefaultTree *Tree = NewDefaultTree()
 
+// Tree implements the heap as a 2D array.
 type Tree struct {
 	store [][]*node.Node
 	//top points to the next available bucket in 2d heap array.
@@ -45,6 +46,7 @@ func (t *Tree) Push(node *node.Node) error {
 	return nil
 }
 
+// Pop extracts the root element of the heap with the less Priority
 func (t *Tree) Pop() (*node.Node, error) {
 	if t.length() == 0 {
 		return nil, errors.New("tree is empty")
@@ -65,6 +67,7 @@ func (t *Tree) Pop() (*node.Node, error) {
 	return topNode, nil
 }
 
+// Down operates the descent of the replacing node of root after its extraction by Pop.
 func (t *Tree) down() error {
 	if t.length() <= 1 {
 		return nil
@@ -100,13 +103,6 @@ func (t *Tree) down() error {
 		}
 	}
 	return nil
-}
-
-func nodeMinPriority(leftnode *node.Node, leftID int, rightnode *node.Node, rightID int) (*node.Node, int) {
-	if leftnode.Priority <= rightnode.Priority {
-		return leftnode, leftID
-	}
-	return rightnode, rightID
 }
 
 // Up maintains the condition of a heap that is to say it makes any transformations needed to maintain the lowest priority node at top.
@@ -153,18 +149,6 @@ func (t *Tree) up(pos int) error {
 // By nature, it's a multiple of columLength.
 func (t Tree) length() int {
 	return len(t.store) * columnLength
-}
-
-func (t Tree) capacity() int {
-	var capacity int
-	for i := range t.store {
-		capacityColumn := cap(t.store[i])
-		if capacityColumn == 0 {
-			break
-		}
-		capacity += capacityColumn
-	}
-	return capacity
 }
 
 // SetNode tries to insert the provided node at the zero indexed position in
@@ -226,27 +210,23 @@ func (t *Tree) allocateNewRow() error {
 	return nil
 }
 
-func (t Tree) getLeft(pos int) (*node.Node, int, error) {
+func (t Tree) getChild(pos int, f func(int) int) (*node.Node, int, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, -1, err
 	}
-	leftID := 2*pos + 1
-	if leftID >= t.length() {
-		return nil, -1, nil
-	}
-	node, err := t.getNode(leftID)
-	return node, leftID, err
-}
-
-func (t Tree) getRight(pos int) (*node.Node, int, error) {
-	if err := t.preconditionGet(pos); err != nil {
-		return nil, -1, err
-	}
-	rightID := 2 * (pos + 1)
+	rightID := f(pos)
 	if rightID >= t.length() {
 		return nil, -1, nil
 	}
 	node, err := t.getNode(rightID)
 	return node, rightID, err
 
+}
+
+func (t Tree) getLeft(pos int) (*node.Node, int, error) {
+	return t.getChild(pos, func(p int) int { return 2*p + 1 })
+}
+
+func (t Tree) getRight(pos int) (*node.Node, int, error) {
+	return t.getChild(pos, func(p int) int { return 2 * (p + 1) })
 }

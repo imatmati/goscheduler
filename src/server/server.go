@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"heap"
 	"net/http"
 	"node"
@@ -34,6 +33,7 @@ func Run(options Options) {
 		decoder := json.NewDecoder(request.Body)
 		if err := decoder.Decode(&node); err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		if err := manager.Push(&node); err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -47,6 +47,6 @@ func Run(options Options) {
 
 	copier.Copy(&srv, &options)
 	if err := srv.ListenAndServe(); err != nil {
-		fmt.Println(err.Error())
+		panic(err.Error())
 	}
 }

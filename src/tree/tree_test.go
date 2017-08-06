@@ -16,27 +16,6 @@ func TestLengthOfFreshTree(t *testing.T) {
 
 }
 
-func TestCapacityOfFreshTree(t *testing.T) {
-
-	capacity := NewDefaultTree().capacity()
-	if capacity != 0 {
-		t.Errorf("La capacité attendue est 0 mais n'est que %d\n", capacity)
-	}
-
-}
-
-func TestCapacityAfterAllocation(t *testing.T) {
-	tree := NewDefaultTree()
-	if err := tree.allocateNewRow(); err != nil {
-		log.Print(err.Error())
-		t.FailNow()
-	}
-	capacity := tree.capacity()
-	if capacity != columnLength {
-		t.Errorf("La capacité attendue est %d mais n'est que %d\n", rowLength, capacity)
-	}
-}
-
 func TestCapacityOverflow(t *testing.T) {
 	tree := NewTree(0)
 	if err := tree.allocateNewRow(); err == nil {
