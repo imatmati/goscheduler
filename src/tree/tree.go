@@ -4,46 +4,79 @@ import (
 	"errors"
 	"fmt"
 	"node"
+	"sync"
+	"sync/atomic"
 )
 
 const (
-	rowLength    int = 100
-	columnLength int = 10000
+	rowLength    int32 = 100
+	columnLength int32 = 10000
 )
-
-//NewDefaultTree creates a defaulted heap container.
-func NewDefaultTree() *Tree {
-	store := make([][]*node.Node, 0, rowLength)
-	return &Tree{store, 0}
-}
-
-//NewTree creates a heap container of length specified.
-func NewTree(length int) *Tree {
-	store := make([][]*node.Node, 0, length)
-	return &Tree{store, 0}
-}
-
-//DefaultTree is a provided default tree with default length.
-var DefaultTree *Tree = NewDefaultTree()
 
 // Tree implements the heap as a 2D array.
 type Tree struct {
 	store [][]*node.Node
 	//top points to the next available bucket in 2d heap array.
-	top int
+	top *topmanager
+}
+
+//NewDefaultTree creates a defaulted heap container.
+func NewDefaultTree() *Tree {
+	store := make([][]*node.Node, 0, rowLength)
+	return &Tree{store, &topmanager{0, &sync.Mutex{}}}
+}
+
+//NewTree creates a heap container of length specified.
+func NewTree(length int) *Tree {
+	store := make([][]*node.Node, 0, length)
+	return &Tree{store, &topmanager{0, &sync.Mutex{}}}
+}
+
+//DefaultTree is a provided default tree with default length.
+var DefaultTree *Tree = NewDefaultTree()
+
+type topmanager struct {
+	top     int64
+	topLock sync.Locker
+}
+
+func (t *topmanager) acquireTop() int64 {
+	t.topLock.Lock()
+	defer func() { t.top++; t.topLock.Unlock() }()
+	return t.top
+
+}
+
+func (t topmanager) getTop() int64 {
+	return atomic.LoadInt64(&t.top)
+}
+
+func (t *topmanager) setTop(previousid, id int64) {
+	atomic.CompareAndSwapInt64(&t.top, previousid, id)
+}
+
+func (t *Tree) setTop(node *node.Node) (top int64, err error) {
+	top = t.top.acquireTop()
+	if err = t.setNode(node, top); err != nil {
+		return
+	}
+	return
 }
 
 // Push insert the node at the next available room in the 2d heap array.
 func (t *Tree) Push(node *node.Node) error {
 	// When I push, I try to insert at top position.
-	if err := t.setNode(node, t.top); err != nil {
+	var (
+		top int64
+		err error
+	)
+	if top, err = t.setTop(node); err != nil {
 		return err
 	}
-	defer func() { t.top++ }()
-	if err := t.up(t.top); err != nil {
-		return err
-	}
-	return nil
+
+	err = t.up(top)
+	return err
+
 }
 
 // Pop extracts the root element of the heap with the less Priority
@@ -55,8 +88,7 @@ func (t *Tree) Pop() (*node.Node, error) {
 	if err != nil {
 		return topNode, err
 	}
-
-	last, err := t.getNode(t.top - 1)
+	last, err := t.getNode(t.top.getTop() - 1)
 	if err != nil {
 		return last, err
 	}
@@ -73,10 +105,10 @@ func (t *Tree) down() error {
 		return nil
 	}
 
-	topnodeID := 0
+	var topnodeID int64 = 0
 	var (
 		topnode, leftnode, rightnode *node.Node
-		leftID, rightID              int
+		leftID, rightID              int64
 		err                          error
 	)
 	for topnodeID > -1 {
@@ -106,7 +138,7 @@ func (t *Tree) down() error {
 }
 
 // Up maintains the condition of a heap that is to say it makes any transformations needed to maintain the lowest priority node at top.
-func (t *Tree) up(pos int) error {
+func (t *Tree) up(pos int64) error {
 	if err := t.preconditionGet(pos); err != nil {
 		return err
 	}
@@ -119,7 +151,7 @@ func (t *Tree) up(pos int) error {
 	for {
 
 		isRight := pos%2 == 0
-		idparent := -1
+		var idparent int64 = -1
 		if isRight {
 			idparent = (pos / 2) - 1
 		} else {
@@ -147,41 +179,44 @@ func (t *Tree) up(pos int) error {
 
 // Length returns the lenght of reserved space for the 2d heap array.
 // By nature, it's a multiple of columLength.
-func (t Tree) length() int {
-	return len(t.store) * columnLength
+func (t Tree) length() int64 {
+	return int64(len(t.store)) * int64(columnLength)
 }
 
 // SetNode tries to insert the provided node at the zero indexed position in
 // the 2d heap array. It can insert in any position below and equal to top index
 // and takes charge of allocating new row if needed if top has gone beyond the current row of data.
-func (t *Tree) setNode(node *node.Node, pos int) error {
+func (t *Tree) setNode(node *node.Node, pos int64) error {
+	fmt.Println("pos", pos)
 	// Row and column position in store 2d array of heap.
 	row, col := getColumnRow(pos)
 	//fmt.Printf("pos %d, col %d, row %d, top %d\n", pos, col, row, t.top)
 	// Get the row and column of the nex available bucket in 2d heap array.
-	rowtop, coltop := getColumnRow(t.top)
+	rowtop, coltop := getColumnRow(t.top.getTop())
 	// Inserting beyond top is forbidden. Can't store beyond next available bucket.
 	// And when push is done, I simply set the node at top position.
 	if row == rowtop && col > coltop || row > rowtop {
 		return fmt.Errorf("Out of range insertion: asked %d but length is %d", pos, t.top)
 	}
+	fmt.Println("coltop", coltop)
 	// Row may be already allocated or not
 	// As a row is fully reserved, there's room for top position as long as
 	// it doesn't start a new line.
 	if coltop == 0 {
 		t.allocateNewRow()
 	}
+	fmt.Print("col ", col, " row ", row, "\n")
 	t.store[row][col] = node
 	return nil
 }
 
-func getColumnRow(pos int) (row, col int) {
-	col = pos % columnLength
-	row = int(pos / columnLength)
+func getColumnRow(pos int64) (row, col int64) {
+	col = pos % int64(columnLength)
+	row = pos / int64(columnLength)
 	return
 }
 
-func (t Tree) preconditionGet(pos int) error {
+func (t Tree) preconditionGet(pos int64) error {
 	if pos < 0 {
 		return fmt.Errorf("index %d of node is negative", pos)
 	}
@@ -191,7 +226,7 @@ func (t Tree) preconditionGet(pos int) error {
 	return nil
 }
 
-func (t Tree) getNode(pos int) (*node.Node, error) {
+func (t Tree) getNode(pos int64) (*node.Node, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, err
 	}
@@ -210,7 +245,7 @@ func (t *Tree) allocateNewRow() error {
 	return nil
 }
 
-func (t Tree) getChild(pos int, f func(int) int) (*node.Node, int, error) {
+func (t Tree) getChild(pos int64, f func(int64) int64) (*node.Node, int64, error) {
 	if err := t.preconditionGet(pos); err != nil {
 		return nil, -1, err
 	}
@@ -223,10 +258,10 @@ func (t Tree) getChild(pos int, f func(int) int) (*node.Node, int, error) {
 
 }
 
-func (t Tree) getLeft(pos int) (*node.Node, int, error) {
-	return t.getChild(pos, func(p int) int { return 2*p + 1 })
+func (t Tree) getLeft(pos int64) (*node.Node, int64, error) {
+	return t.getChild(pos, func(p int64) int64 { return 2*p + 1 })
 }
 
-func (t Tree) getRight(pos int) (*node.Node, int, error) {
-	return t.getChild(pos, func(p int) int { return 2 * (p + 1) })
+func (t Tree) getRight(pos int64) (*node.Node, int64, error) {
+	return t.getChild(pos, func(p int64) int64 { return 2 * (p + 1) })
 }
