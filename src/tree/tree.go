@@ -105,7 +105,7 @@ func (t *Tree) down() error {
 		return nil
 	}
 
-	var topnodeID int64 = 0
+	var topnodeID int64
 	var (
 		topnode, leftnode, rightnode *node.Node
 		leftID, rightID              int64
@@ -187,7 +187,6 @@ func (t Tree) length() int64 {
 // the 2d heap array. It can insert in any position below and equal to top index
 // and takes charge of allocating new row if needed if top has gone beyond the current row of data.
 func (t *Tree) setNode(node *node.Node, pos int64) error {
-	fmt.Println("pos", pos)
 	// Row and column position in store 2d array of heap.
 	row, col := getColumnRow(pos)
 	//fmt.Printf("pos %d, col %d, row %d, top %d\n", pos, col, row, t.top)
@@ -198,14 +197,12 @@ func (t *Tree) setNode(node *node.Node, pos int64) error {
 	if row == rowtop && col > coltop || row > rowtop {
 		return fmt.Errorf("Out of range insertion: asked %d but length is %d", pos, t.top)
 	}
-	fmt.Println("coltop", coltop)
 	// Row may be already allocated or not
 	// As a row is fully reserved, there's room for top position as long as
 	// it doesn't start a new line.
-	if coltop == 0 {
+	if coltop == 1 {
 		t.allocateNewRow()
 	}
-	fmt.Print("col ", col, " row ", row, "\n")
 	t.store[row][col] = node
 	return nil
 }

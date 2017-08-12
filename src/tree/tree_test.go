@@ -46,7 +46,7 @@ func TestRemainderLessThanColumnLength(t *testing.T) {
 func TestSetNode0(t *testing.T) {
 	tree := NewDefaultTree()
 	nodetoinsert := node.New("whatever", 0)
-
+	tree.allocateNewRow()
 	if err := tree.setNode(nodetoinsert, 0); err != nil {
 		t.Errorf(err.Error())
 
