@@ -17,7 +17,8 @@ const (
 type Tree struct {
 	store [][]*node.Node
 	//top points to the next available bucket in 2d heap array.
-	top *topmanager
+	top    *topmanager
+	booker Booker
 }
 
 //NewDefaultTree creates a defaulted heap container.
