@@ -5,50 +5,82 @@ import (
 	"sync"
 )
 
-type Booker interface {
-	Book(pos int64) func()
-	//Release(pos int64)
+type Booker struct {
+	booking       map[int64]sync.Locker
+	bookingChan   chan Book
+	releasingChan chan Release
+}
+type Book struct {
+	pos      int64
+	response chan bool
+	id       string
 }
 
-type BookerImpl struct {
-	booking     map[int64]sync.Locker
-	bookinglock sync.Locker
+type Release Book
+
+func (b Booker) book(pos int64, id string) bool {
+	response := make(chan bool)
+	fmt.Printf("Sending book request for %s\n", id)
+	b.bookingChan <- Book{pos, response, id}
+	fmt.Printf("Book request sent for %s\n", id)
+	return <-response
 }
 
-func (b *BookerImpl) Book(pos int64) func() {
-	fmt.Println("BookerImpl lock access ")
-	b.bookinglock.Lock()
-	var (
-		lock sync.Locker
-		ok   bool
-	)
-	fmt.Println("BookerImpl after lock access")
-	if lock, ok = b.booking[pos]; !ok {
-		lock = &sync.Mutex{}
-		b.booking[pos] = lock
-	}
-	fmt.Printf("BookerImpl before lock of node %v\n", lock)
-	lock.Lock()
-	fmt.Println("BookerImpl after lock of node")
-	b.bookinglock.Unlock()
-	fmt.Println("BookerImpl unlock access")
-	return b.makeReleaseFunc(pos)
+func (b Booker) release(pos int64, id string) bool {
+	response := make(chan bool)
+	fmt.Printf("Sending release request for %s\n", id)
+	b.releasingChan <- Release{pos, response, id}
+	fmt.Printf("Release request sent for %s\n", id)
+	return <-response
 }
 
-func (b *BookerImpl) makeReleaseFunc(pos int64) func() {
-	return func() {
-		fmt.Println("BookerImpl stage 1")
-		b.bookinglock.Lock()
-		fmt.Println("BookerImpl stage 2")
-		b.booking[pos].Unlock()
-		fmt.Println("BookerImpl stage 3")
-		delete(b.booking, pos)
-		fmt.Println("BookerImpl stage 4")
-		b.bookinglock.Unlock()
-		fmt.Println("BookerImpl stage 5")
-	}
+func (b Booker) Start() {
+	go func() {
+
+		for {
+			select {
+			case request := <-b.bookingChan:
+				fmt.Printf("Request from %s\n", request.id)
+				if lock, ok := b.booking[request.pos]; ok && lock != nil {
+					//Someone acquired the node, waiting for my turn
+					fmt.Println("Waiting for lock")
+					lock.Lock()
+					fmt.Println("Lock acquired")
+				} else {
+					// Node is accessible, save it from others.
+					newLock := &sync.Mutex{}
+					fmt.Println("Creating new lock")
+					newLock.Lock()
+					b.booking[request.pos] = newLock
+					fmt.Println("Lock put")
+				}
+				request.response <- true
+			case release := <-b.releasingChan:
+				fmt.Printf("Release from %s\n", release.id)
+				if lock, ok := b.booking[release.pos]; ok {
+					fmt.Println("Lock present")
+					lock.Unlock()
+					fmt.Println("Lock acquired")
+					b.booking[release.pos] = nil
+					fmt.Println("Lock deleted")
+				}
+				release.response <- true
+
+			}
+		}
+	}()
 }
 
-func New() Booker {
-	return &BookerImpl{make(map[int64]sync.Locker), &sync.Mutex{}}
+func New() *Booker {
+	return &Booker{make(map[int64]sync.Locker),
+		make(chan Book),
+		make(chan Release)}
+}
+
+func NewStarted() *Booker {
+	booker := &Booker{make(map[int64]sync.Locker),
+		make(chan Book),
+		make(chan Release)}
+	booker.Start()
+	return booker
 }
