@@ -1,6 +1,7 @@
 package booker
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -15,41 +16,38 @@ type BookerImpl struct {
 }
 
 func (b *BookerImpl) Book(pos int64) func() {
+	fmt.Println("BookerImpl lock access ")
 	b.bookinglock.Lock()
 	var (
 		lock sync.Locker
 		ok   bool
 	)
+	fmt.Println("BookerImpl after lock access")
 	if lock, ok = b.booking[pos]; !ok {
 		lock = &sync.Mutex{}
 		b.booking[pos] = lock
 	}
+	fmt.Printf("BookerImpl before lock of node %v\n", lock)
 	lock.Lock()
+	fmt.Println("BookerImpl after lock of node")
 	b.bookinglock.Unlock()
+	fmt.Println("BookerImpl unlock access")
 	return b.makeReleaseFunc(pos)
 }
 
 func (b *BookerImpl) makeReleaseFunc(pos int64) func() {
 	return func() {
+		fmt.Println("BookerImpl stage 1")
 		b.bookinglock.Lock()
+		fmt.Println("BookerImpl stage 2")
 		b.booking[pos].Unlock()
-		b.booking[pos] = nil
+		fmt.Println("BookerImpl stage 3")
+		delete(b.booking, pos)
+		fmt.Println("BookerImpl stage 4")
 		b.bookinglock.Unlock()
+		fmt.Println("BookerImpl stage 5")
 	}
 }
-
-/*func (b *BookerImpl) Release(pos int64) {
-	b.bookinglock.Lock()
-	var (
-		lock sync.Locker
-		ok   bool
-	)
-	if lock, ok = b.booking[pos]; ok {
-		lock.Unlock()
-		b.booking[pos] = nil
-	}
-	b.bookinglock.Unlock()
-}*/
 
 func New() Booker {
 	return &BookerImpl{make(map[int64]sync.Locker), &sync.Mutex{}}
