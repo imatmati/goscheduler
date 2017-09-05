@@ -1,8 +1,6 @@
 package tree
 
 import (
-	"fmt"
-	"log"
 	"node"
 	"testing"
 )
@@ -26,38 +24,35 @@ func TestCapacityOverflow(t *testing.T) {
 func TestRemainderAboveAndMultipleColumnLength(t *testing.T) {
 	row, col := getColumnRow(120012)
 	if col != 12 || row != 12 {
-		log.Print(fmt.Sprintf("col : %d, row : %d\n", col, row))
-		t.FailNow()
+
+		t.Errorf("Wrong calcul of rows and cols for %d", 120012)
 	}
 }
 
 func TestRemainderAboveAndNotMultipleColumnLength(t *testing.T) {
 	row, col := getColumnRow(100007)
 	if col != 7 || row != 10 {
-		log.Print(fmt.Sprintf("col : %d, row : %d\n", col, row))
-		t.FailNow()
+		t.Errorf("Wrong calcul of rows and cols for %d", 100007)
 	}
 }
 
 func TestRemainderLessThanColumnLength(t *testing.T) {
 	row, col := getColumnRow(87)
 	if col != 87 || row != 0 {
-		log.Print(fmt.Sprintf("col : %d, row : %d\n", col, row))
-		t.FailNow()
+		t.Errorf("Wrong calcul of rows and cols for %d", 87)
 	}
 }
 
 func TestSetNode0(t *testing.T) {
 	tree := NewDefaultTree()
 	nodetoinsert := node.New("whatever", 0)
-
+	tree.allocateNewRow()
 	if err := tree.setNode(nodetoinsert, 0); err != nil {
-		log.Print(err.Error())
-		t.FailNow()
+		t.Errorf(err.Error())
+
 	}
 	if tree.store[0][0] != nodetoinsert {
-		log.Printf("expected address %p, actual address %p", nodetoinsert, tree.store[0][0])
-		t.FailNow()
+		t.Errorf("expected address %p, actual address %p", nodetoinsert, tree.store[0][0])
 	}
 
 }
@@ -68,7 +63,7 @@ func TestUpWithoutChange(t *testing.T) {
 	child := node.New("child", 1)
 	tree.Push(parent)
 	tree.Push(child)
-	tree.up(1)
+	//tree.up(1)
 	if allegedParent, err := tree.getNode(0); allegedParent != parent || err != nil {
 		t.Errorf("Parent %v is uncorrect, %v expected", allegedParent, parent)
 	}
@@ -82,16 +77,13 @@ func TestUpWitTwoNodes(t *testing.T) {
 	parent := node.New("parent", 2)
 	child := node.New("child", 1)
 	if err := tree.Push(parent); err != nil {
-		fmt.Println(err.Error())
-		t.FailNow()
+		t.Errorf(err.Error())
 	}
 	if err := tree.Push(child); err != nil {
-		fmt.Println(err.Error())
-		t.FailNow()
+		t.Errorf(err.Error())
 	}
 	if err := tree.up(1); err != nil {
-		fmt.Println(err.Error())
-		t.FailNow()
+		t.Errorf(err.Error())
 	}
 	if allegedParent, err := tree.getNode(0); allegedParent != child || err != nil {
 		t.Errorf("Parent %v is uncorrect, %v expected", allegedParent, child)
